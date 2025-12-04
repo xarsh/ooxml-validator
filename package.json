@@ -1,6 +1,6 @@
 {
-  "name": "ooxml-validator",
-  "version": "0.1.5",
+  "name": "@xarsh/ooxml-validator",
+  "version": "0.1.6",
   "description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
   "keywords": [
     "ooxml",
@@ -12,7 +12,10 @@
   ],
   "license": "MIT",
   "author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
-  "repository": "github:xarsh/ooxml-validator",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xarsh/ooxml-validator.git"
+  },
   "type": "module",
   "main": "dist/src/index.js",
   "bin": {
@@ -31,5 +34,8 @@
     "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

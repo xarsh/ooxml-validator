@@ -5,7 +5,7 @@ Node.js wrapper for OOXML (Office Open XML) file validation. Validates .docx, .x
 ## Installation
 
 ```bash
-npm install ooxml-validator
+npm install @xarsh/ooxml-validator
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ npm install ooxml-validator
 ### As a Library
 
 ```javascript
-import { validateFile, isValid } from 'ooxml-validator'
+import { validateFile, isValid } from '@xarsh/ooxml-validator'
 
 // Simple validation
 const valid = await isValid('document.docx')
