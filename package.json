@@ -17,6 +17,9 @@
     "url": "git+https://github.com/xarsh/ooxml-validator.git"
   },
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "main": "dist/src/index.js",
   "bin": {
     "ooxml-validator": "dist/src/cli.js"
