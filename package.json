@@ -28,12 +28,8 @@
     "build": "tsc",
     "postinstall": "node dist/scripts/install-binary.js"
   },
-  "dependencies": {
-    "commander": "^14.0.2"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
-    "@types/commander": "^2.12.0",
     "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
