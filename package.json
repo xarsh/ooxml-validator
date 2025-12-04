@@ -1,6 +1,6 @@
 {
   "name": "@xarsh/ooxml-validator",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
   "keywords": [
     "ooxml",
