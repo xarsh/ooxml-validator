@@ -10,11 +10,20 @@ function detectRid(): string {
 	const platform = process.platform
 	const arch = process.arch
 
-	if (platform === 'darwin' && arch === 'arm64') return 'osx-arm64'
-	if (platform === 'darwin' && arch === 'x64') return 'osx-x64'
-	if (platform === 'linux' && arch === 'x64') return 'linux-x64'
-	if (platform === 'linux' && arch === 'arm64') return 'linux-arm64'
-	if (platform === 'win32' && arch === 'x64') return 'win-x64'
+	if (platform === 'darwin') {
+		if (arch === 'arm64') return 'osx-arm64'
+		if (arch === 'x64') return 'osx-x64'
+	}
+
+	if (platform === 'linux') {
+		if (arch === 'x64') return 'linux-x64'
+		if (arch === 'arm64') return 'linux-arm64'
+	}
+
+	if (platform === 'win32') {
+		if (arch === 'x64') return 'win-x64'
+		if (arch === 'arm64') return 'win-arm64'
+	}
 
 	throw new Error(`Unsupported platform/arch: ${platform} ${arch}`)
 }

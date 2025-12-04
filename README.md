@@ -65,8 +65,8 @@ export OOXML_VALIDATOR_CLI="dotnet /path/to/OOXMLValidatorCLI.dll"
 
 The package automatically downloads platform-specific binaries during installation. Supported platforms:
 - macOS (arm64, x64)
-- Linux (x64, arm64)
-- Windows (x64)
+- Linux (arm64, x64)
+- Windows (arm64, x64)
 
 ## License
 
