@@ -1,10 +1,13 @@
-import { chmodSync, createWriteStream, mkdirSync, unlinkSync } from 'node:fs'
+import { chmodSync, createWriteStream, mkdirSync, readFileSync, unlinkSync } from 'node:fs'
 import https from 'node:https'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+const pkgPath = join(__dirname, '..', '..', 'package.json')
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+const version = `v${pkg.version}`
 
 function detectRid(): string {
 	const platform = process.platform
@@ -28,10 +31,10 @@ function detectRid(): string {
 	throw new Error(`Unsupported platform/arch: ${platform} ${arch}`)
 }
 
-function getDownloadUrl(tag: string, rid: string): string {
+function getDownloadUrl(rid: string): string {
 	const owner = 'xarsh'
 	const repo = 'ooxml-validator'
-	const base = `https://github.com/${owner}/${repo}/releases/download/${tag}`
+	const base = `https://github.com/${owner}/${repo}/releases/download/${version}`
 	const suffix = rid.startsWith('win-') ? '.exe' : ''
 	return `${base}/ooxml-validator-${rid}${suffix}`
 }
@@ -98,15 +101,13 @@ async function download(url: string, dest: string, redirectCount = 0): Promise<v
 async function main() {
 	try {
 		const rid = detectRid()
-		const version = process.env.OOXML_VALIDATOR_VERSION || 'v0.1.0'
-
 		const packageRoot = join(__dirname, '..', '..')
 		const binDir = join(packageRoot, 'bin', rid)
 		const binPath = join(binDir, rid.startsWith('win-') ? 'ooxml-validator.exe' : 'ooxml-validator')
 
 		mkdirSync(binDir, { recursive: true })
 
-		const url = getDownloadUrl(version, rid)
+		const url = getDownloadUrl(rid)
 		console.log(`[ooxml-validator] Downloading binary from ${url}`)
 		await download(url, binPath)
 		console.log(`[ooxml-validator] Installed binary to ${binPath}`)
