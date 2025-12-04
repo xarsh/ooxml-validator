@@ -45,7 +45,7 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -o out/${{ matrix.rid }}
 
-      - name: Rename binary
+      - name: Prepare artifact
         run: |
           mkdir -p artifacts
           if [[ "${{ matrix.rid }}" == win-* ]]; then
@@ -57,9 +57,29 @@ jobs:
           fi
           mv out/${{ matrix.rid }}/${BIN_NAME} artifacts/${OUT_NAME}
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ooxml-validator-${{ matrix.rid }}
+          path: artifacts/*
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: collected
+
+      - name: Display collected files
+        run: ls -R collected
+
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
+          files: collected/**/*.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
