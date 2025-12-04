@@ -1,0 +1,11 @@
+# Node.js
+bin/
+dist/
+node_modules/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+*.nuget.*
+project.assets.json

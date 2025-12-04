@@ -1,0 +1,10 @@
+# exclude everything by default
+*
+
+# allow runtime code
+!dist/**
+
+# package essentials
+!package.json
+!README.md
+!LICENSE

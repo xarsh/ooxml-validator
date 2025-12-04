@@ -1,0 +1,62 @@
+name: Build and Release OOXML Validator Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build for ${{ matrix.rid }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rid:
+          - win-x64
+          - linux-x64
+          - osx-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore dotnet-validator/ooxml-validator-cli.csproj
+
+      - name: Publish self-contained single file
+        run: |
+          dotnet publish dotnet-validator/ooxml-validator-cli.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o out/${{ matrix.rid }}
+
+      - name: Rename binary
+        run: |
+          mkdir -p artifacts
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            BIN_NAME="ooxml-validator-cli.exe"
+            OUT_NAME="ooxml-validator-${{ matrix.rid }}.exe"
+          else
+            BIN_NAME="ooxml-validator-cli"
+            OUT_NAME="ooxml-validator-${{ matrix.rid }}"
+          fi
+          mv out/${{ matrix.rid }}/${BIN_NAME} artifacts/${OUT_NAME}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
