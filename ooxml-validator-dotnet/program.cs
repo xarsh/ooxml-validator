@@ -5,7 +5,7 @@ using DocumentFormat.OpenXml.Validation;
 
 if (args.Length == 0)
 {
-  Console.Error.WriteLine("Usage: ooxml-validator-cli <file> [OfficeVersion]");
+  Console.Error.WriteLine("Usage: ooxml-validator <file> [OfficeVersion]");
   return 1;
 }
 
@@ -21,6 +21,13 @@ var result = new ValidationResultDto
 {
   File = file,
   Errors = new List<ValidationErrorDto>()
+};
+
+var jsonOptions = new JsonSerializerOptions
+{
+  PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+  DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
+  WriteIndented = true
 };
 
 try
@@ -42,7 +49,7 @@ try
 
   result.Ok = result.Errors.Count == 0;
 
-  var json = JsonSerializer.Serialize(result);
+  var json = JsonSerializer.Serialize(result, jsonOptions);
   Console.WriteLine(json);
   return 0;
 }
@@ -61,7 +68,7 @@ catch (Exception ex)
             }
         }
   };
-  Console.WriteLine(JsonSerializer.Serialize(errorResult));
+  Console.WriteLine(JsonSerializer.Serialize(errorResult, jsonOptions));
   return 0;
 }
 

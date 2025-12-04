@@ -23,5 +23,8 @@ export function resolveEmbeddedBinary(): string {
 		throw new Error(`No embedded OOXML validator binary for platform: ${platform} ${arch}`)
 	}
 
-	return join(__dirname, '..', 'bin', rid, 'ooxml-validator')
+	const packageRoot = join(__dirname, '..', '..')
+	const binName = rid.startsWith('win-') ? 'ooxml-validator.exe' : 'ooxml-validator'
+	const binPath = join(packageRoot, 'bin', rid, binName)
+	return binPath
 }

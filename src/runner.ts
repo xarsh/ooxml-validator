@@ -6,6 +6,15 @@ export interface ValidationError {
 	description?: string
 	path?: string
 	xpath?: string
+	id?: string
+	errorType?: string
+	[key: string]: unknown
+}
+
+export interface ValidationResult {
+	file: string
+	ok: boolean
+	errors: ValidationError[]
 	[key: string]: unknown
 }
 
@@ -20,29 +29,21 @@ function getValidatorCommand(): { cmd: string; args: string[] } {
 	const env = process.env.OOXML_VALIDATOR_CLI
 	if (env && env.trim().length > 0) {
 		const parts = env.split(' ')
-		const cmd = parts[0]
-		const baseArgs = parts.slice(1)
-		return { cmd, args: baseArgs }
+		return { cmd: parts[0], args: parts.slice(1) }
 	}
 
 	const embedded = resolveEmbeddedBinary()
 	return { cmd: embedded, args: [] }
 }
 
-export function runValidator(fileOrDir: string, options: RunOptions = {}): Promise<ValidationError[]> {
+export function runValidator(file: string, options: RunOptions = {}): Promise<ValidationResult> {
 	const { cmd, args } = getValidatorCommand()
 
-	const cliArgs = [...args]
-
-	cliArgs.push(fileOrDir)
+	const cliArgs = [...args, file]
 
 	if (options.officeVersion) {
 		cliArgs.push(options.officeVersion)
 	}
-
-	if (options.xmlOutput) cliArgs.push('--xml')
-	if (options.recursive) cliArgs.push('--recursive')
-	if (options.all) cliArgs.push('--all')
 
 	return new Promise((resolve, reject) => {
 		const child = spawn(cmd, cliArgs, { stdio: ['ignore', 'pipe', 'pipe'] })
@@ -69,16 +70,10 @@ export function runValidator(fileOrDir: string, options: RunOptions = {}): Promi
 			try {
 				const trimmed = stdout.trim()
 				if (!trimmed) {
-					resolve([])
-					return
+					return resolve({ file, ok: false, errors: [] })
 				}
-
-				const json = JSON.parse(trimmed)
-				if (Array.isArray(json)) {
-					resolve(json as ValidationError[])
-				} else {
-					resolve([json as ValidationError])
-				}
+				const json = JSON.parse(trimmed) as ValidationResult
+				resolve(json)
 			} catch (e) {
 				reject(new Error(`Failed to parse OOXML Validator output as JSON: ${(e as Error).message}\nOutput was:\n${stdout}`))
 			}

@@ -1,6 +1,6 @@
 {
   "name": "ooxml-validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
   "keywords": [
     "ooxml",
@@ -16,7 +16,7 @@
   "type": "module",
   "main": "dist/src/index.js",
   "bin": {
-    "ooxml-validate": "dist/src/cli.js"
+    "ooxml-validator": "dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc",

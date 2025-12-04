@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs'
+import { chmodSync, createWriteStream, mkdirSync, unlinkSync } from 'node:fs'
 import https from 'node:https'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -36,25 +36,62 @@ function getDownloadUrl(tag: string, rid: string): string {
 	return `${base}/ooxml-validator-${rid}${suffix}`
 }
 
-async function download(url: string, dest: string): Promise<void> {
+async function download(url: string, dest: string, redirectCount = 0): Promise<void> {
+	const MAX_REDIRECTS = 5
+
 	await new Promise<void>((resolve, reject) => {
+		console.log(`[ooxml-validator] GET ${url}`)
 		https
 			.get(url, (res) => {
-				if (res.statusCode && res.statusCode >= 400) {
-					reject(new Error(`HTTP ${res.statusCode} when downloading ${url}`))
+				const status = res.statusCode ?? 0
+
+				if ([301, 302, 303, 307, 308].includes(status) && res.headers.location) {
+					if (redirectCount >= MAX_REDIRECTS) {
+						reject(new Error(`Too many redirects when downloading ${url}`))
+						res.resume()
+						return
+					}
+
+					const nextUrl = new URL(res.headers.location, url).toString()
+					console.log(`[ooxml-validator] Redirect -> ${nextUrl}`)
+					res.resume()
+					download(nextUrl, dest, redirectCount + 1)
+						.then(resolve)
+						.catch(reject)
 					return
 				}
 
-				const chunks: Buffer[] = []
-				res.on('data', (c) => chunks.push(c))
-				res.on('end', () => {
-					const buf = Buffer.concat(chunks)
-					writeFileSync(dest, buf)
-					chmodSync(dest, 0o755)
-					resolve()
+				if (status < 200 || status >= 300) {
+					reject(new Error(`HTTP ${status} when downloading ${url}`))
+					res.resume()
+					return
+				}
+
+				const file = createWriteStream(dest)
+
+				res.pipe(file)
+
+				file.on('finish', () => {
+					file.close(() => {
+						chmodSync(dest, 0o755)
+						console.log(`[ooxml-validator] Downloaded to ${dest}`)
+						resolve()
+					})
+				})
+
+				file.on('error', (err) => {
+					try {
+						file.close()
+						unlinkSync(dest)
+					} catch {
+						// ignore
+					}
+					reject(err)
 				})
 			})
-			.on('error', (err) => reject(err))
+			.on('error', (err) => {
+				reject(err)
+			})
 	})
 }
 
@@ -63,9 +100,9 @@ async function main() {
 		const rid = detectRid()
 		const version = process.env.OOXML_VALIDATOR_VERSION || 'v0.1.0'
 
-		// node_modules/ooxml-validator/bin/<platform>/ooxml-validator に保存する
-		const binDir = join(__dirname, '..', 'bin', rid)
-		const binPath = join(binDir, 'ooxml-validator')
+		const packageRoot = join(__dirname, '..', '..')
+		const binDir = join(packageRoot, 'bin', rid)
+		const binPath = join(binDir, rid.startsWith('win-') ? 'ooxml-validator.exe' : 'ooxml-validator')
 
 		mkdirSync(binDir, { recursive: true })
 

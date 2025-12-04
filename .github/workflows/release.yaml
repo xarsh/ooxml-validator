@@ -30,14 +30,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "9.0.x"
 
       - name: Restore
-        run: dotnet restore dotnet-validator/ooxml-validator-cli.csproj
+        run: dotnet restore ooxml-validator-dotnet/ooxml-validator.csproj
 
       - name: Publish self-contained single file
         run: |
-          dotnet publish dotnet-validator/ooxml-validator-cli.csproj \
+          dotnet publish ooxml-validator-dotnet/ooxml-validator.csproj \
             -c Release \
             -r ${{ matrix.rid }} \
             --self-contained true \
@@ -49,10 +49,10 @@ jobs:
         run: |
           mkdir -p artifacts
           if [[ "${{ matrix.rid }}" == win-* ]]; then
-            BIN_NAME="ooxml-validator-cli.exe"
+            BIN_NAME="ooxml-validator.exe"
             OUT_NAME="ooxml-validator-${{ matrix.rid }}.exe"
           else
-            BIN_NAME="ooxml-validator-cli"
+            BIN_NAME="ooxml-validator"
             OUT_NAME="ooxml-validator-${{ matrix.rid }}"
           fi
           mv out/${{ matrix.rid }}/${BIN_NAME} artifacts/${OUT_NAME}

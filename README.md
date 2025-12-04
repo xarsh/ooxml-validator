@@ -32,13 +32,10 @@ console.log(result.errors) // Array of validation errors
 
 ```bash
 # Validate a file
-ooxml-validate document.docx
+ooxml-validator document.docx
 
 # Specify Office version
-ooxml-validate document.docx --office-version Office2019
-
-# JSON output
-ooxml-validate document.docx --json
+ooxml-validator document.docx --office-version Office2019
 ```
 
 ## Options
@@ -58,7 +55,7 @@ ooxml-validate document.docx --json
 If the automatic binary download fails, you can manually specify the validator CLI path:
 
 ```bash
-export OOXML_VALIDATOR_CLI="dotnet /path/to/OOXMLValidatorCLI.dll"
+export OOXML_VALIDATOR_CLI="/path/to/ooxml-validator"
 ```
 
 ## Requirements
