@@ -1,6 +1,6 @@
 {
   "name": "ooxml-validator",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
   "keywords": [
     "ooxml",
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "postinstall": "npm run build && node dist/scripts/install-binary.js"
+    "postinstall": "node dist/scripts/install-binary.js"
   },
   "dependencies": {
     "commander": "^14.0.2"
