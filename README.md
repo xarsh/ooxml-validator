@@ -1,8 +1,8 @@
 # ooxml-validator
 
-A fast, zero-setup validator for Office Open XML files (docx/xlsx/pptx).
-No .NET runtime, no extra tools required.
-The validator binary for your platform is downloaded automatically during installation.
+Fast, zero-dependency validator for Office Open XML files (docx/xlsx/pptx).
+Runs as a standalone executable — no .NET installation required.
+A compact platform-specific binary is downloaded automatically during installation.
 
 Supports validation of:
 
@@ -40,27 +40,53 @@ console.log(result.errors) // Array of validation errors
 
 ```bash
 # Validate a file
-ooxml-validator document.docx
+npx @xarsh/ooxml-validator document.docx
 
 # Specify Office version
-ooxml-validator slides.pptx --office-version Office2019
+npx @xarsh/ooxml-validator slides.pptx --office-version Office2019
 ```
 
 The CLI always prints a single JSON object to stdout:
+
 ```json
 {
-  "file": "path/to/file.pptx",
+  "file": "path/to/valid.pptx",
+  "ok": true,
+  "errors": []
+}
+```
+
+```jsonc
+{
+  "file": "path/to/invalid.pptx",
   "ok": false,
   "errors": [
     {
-      "description": "Specified part does not exist in the package.",
+      "description": "The element has unexpected child element 'http://schemas.openxmlformats.org/presentationml/2006/main:notesMasterIdLst'. List of possible elements expected: <http://schemas.openxmlformats.org/presentationml/2006/main:notesSz>.",
       "path": "/ppt/presentation.xml",
-      "xpath": "/p:presentation/...",
-      "id": "SomeId",
-      "errorType": "OpenXmlPackageException"
-    }
+      "xPath": "/p:presentation[1]",
+      "id": "Sch_UnexpectedElementContentExpectingComplex",
+      "errorType": "Schema"
+    },
+    {
+      "description": "The attribute 'x' has invalid value 'NaN'. The string 'NaN' is not a valid 'Int64' value.",
+      "path": "/ppt/slides/slide3.xml",
+      "xPath": "/p:sld[1]/p:cSld[1]/p:spTree[1]/p:sp[2]/p:spPr[1]/a:xfrm[1]/a:off[1]",
+      "id": "Sch_AttributeValueDataTypeDetailed",
+      "errorType": "Schema"
+    },
+    /* More errors ... */
   ]
 }
+```
+
+This structured output is easy to consume from scripts and CI pipelines.
+For example, you can pipe it to jq to filter errors or fail the build when ok is false.
+
+```bash
+# Fail if any file is invalid
+ooxml-validator file.pptx \
+  | jq -e 'select(.ok == false)' > /dev/null && echo "invalid" && exit 1
 ```
 
 ## Options
