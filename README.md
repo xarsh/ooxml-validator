@@ -1,6 +1,14 @@
 # ooxml-validator
 
-Node.js wrapper for OOXML (Office Open XML) file validation. Validates .docx, .xlsx, .pptx files against Office standards.
+A fast, zero-setup validator for Office Open XML files (docx/xlsx/pptx).
+No .NET runtime, no extra tools required.
+The validator binary for your platform is downloaded automatically during installation.
+
+Supports validation of:
+
+- Word: .docx, .docm, .dotx, .dotm
+- Excel: .xlsx, .xlsm, .xltx, .xltm, .xlam
+- PowerPoint: .pptx, .pptm, .ppsx, .ppsm, .potx, .potm
 
 ## Installation
 
@@ -35,7 +43,24 @@ console.log(result.errors) // Array of validation errors
 ooxml-validator document.docx
 
 # Specify Office version
-ooxml-validator document.docx --office-version Office2019
+ooxml-validator slides.pptx --office-version Office2019
+```
+
+The CLI always prints a single JSON object to stdout:
+```json
+{
+  "file": "path/to/file.pptx",
+  "ok": false,
+  "errors": [
+    {
+      "description": "Specified part does not exist in the package.",
+      "path": "/ppt/presentation.xml",
+      "xpath": "/p:presentation/...",
+      "id": "SomeId",
+      "errorType": "OpenXmlPackageException"
+    }
+  ]
+}
 ```
 
 ## Options
