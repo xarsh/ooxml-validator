@@ -118,4 +118,9 @@ The package automatically downloads platform-specific binaries during installati
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Third-Party Notices
+
+This project includes the Open XML SDK, © Microsoft Corporation and contributors.
+Licensed under the MIT License. See THIRD-PARTY-NOTICES.md for details.
