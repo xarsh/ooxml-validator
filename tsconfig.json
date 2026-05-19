@@ -6,6 +6,8 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
     "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
     "strict": true,
     "esModuleInterop": true,
     "noUncheckedSideEffectImports": true,
