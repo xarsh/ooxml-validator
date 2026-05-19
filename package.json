@@ -21,6 +21,7 @@
     "node": ">=18"
   },
   "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "bin": {
     "ooxml-validator": "dist/src/cli.js"
   },
