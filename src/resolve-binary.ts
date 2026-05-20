@@ -1,30 +1,33 @@
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const require = createRequire(import.meta.url)
 
-export function resolveEmbeddedBinary(): string {
+function detectRid(): string {
 	const platform = process.platform
 	const arch = process.arch
 
-	let rid: string
-	if (platform === 'darwin' && arch === 'arm64') {
-		rid = 'osx-arm64'
-	} else if (platform === 'darwin' && arch === 'x64') {
-		rid = 'osx-x64'
-	} else if (platform === 'linux' && arch === 'x64') {
-		rid = 'linux-x64'
-	} else if (platform === 'linux' && arch === 'arm64') {
-		rid = 'linux-arm64'
-	} else if (platform === 'win32' && arch === 'x64') {
-		rid = 'win-x64'
-	} else {
-		throw new Error(`No embedded OOXML validator binary for platform: ${platform} ${arch}`)
-	}
+	if (platform === 'darwin' && arch === 'arm64') return 'darwin-arm64'
+	if (platform === 'darwin' && arch === 'x64') return 'darwin-x64'
+	if (platform === 'linux' && arch === 'arm64') return 'linux-arm64'
+	if (platform === 'linux' && arch === 'x64') return 'linux-x64'
+	if (platform === 'win32' && arch === 'arm64') return 'win32-arm64'
+	if (platform === 'win32' && arch === 'x64') return 'win32-x64'
 
-	const packageRoot = join(__dirname, '..', '..')
-	const binName = rid.startsWith('win-') ? 'ooxml-validator.exe' : 'ooxml-validator'
-	const binPath = join(packageRoot, 'bin', rid, binName)
-	return binPath
+	throw new Error(`No embedded OOXML validator binary for platform: ${platform} ${arch}`)
+}
+
+export function resolveEmbeddedBinary(): string {
+	const rid = detectRid()
+	const binName = rid.startsWith('win32-') ? 'ooxml-validator.exe' : 'ooxml-validator'
+	const pkgName = `@xarsh/ooxml-validator-${rid}`
+
+	try {
+		return require.resolve(`${pkgName}/${binName}`)
+	} catch (e) {
+		throw new Error(
+			`Missing optional dependency ${pkgName} for ${process.platform}-${process.arch}. ` +
+				'Try reinstalling (npm install / npm rebuild) or set OOXML_VALIDATOR_CLI to your own CLI path. ' +
+				`Underlying error: ${(e as Error).message}`,
+		)
+	}
 }

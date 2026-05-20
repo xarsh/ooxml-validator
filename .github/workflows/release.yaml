@@ -10,18 +10,25 @@ permissions:
 
 jobs:
   build:
-    name: Build for ${{ matrix.rid }}
-    runs-on: ubuntu-latest
+    name: Build for ${{ matrix.dotnet_rid }}
+    runs-on: ${{ matrix.runner }}
 
     strategy:
+      fail-fast: false
       matrix:
-        rid:
-          - win-x64
-          - win-arm64
-          - linux-x64
-          - linux-arm64
-          - osx-x64
-          - osx-arm64
+        include:
+          - dotnet_rid: win-x64
+            runner: ubuntu-latest
+          - dotnet_rid: win-arm64
+            runner: ubuntu-latest
+          - dotnet_rid: linux-x64
+            runner: ubuntu-latest
+          - dotnet_rid: linux-arm64
+            runner: ubuntu-latest
+          - dotnet_rid: osx-x64
+            runner: macos-latest
+          - dotnet_rid: osx-arm64
+            runner: macos-latest
 
     steps:
       - name: Checkout
@@ -39,28 +46,36 @@ jobs:
         run: |
           dotnet publish ooxml-validator-dotnet/ooxml-validator.csproj \
             -c Release \
-            -r ${{ matrix.rid }} \
+            -r ${{ matrix.dotnet_rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
-            -o out/${{ matrix.rid }}
+            -o out/${{ matrix.dotnet_rid }}
 
       - name: Prepare artifact
         run: |
           mkdir -p artifacts
-          if [[ "${{ matrix.rid }}" == win-* ]]; then
+          if [[ "${{ matrix.dotnet_rid }}" == win-* ]]; then
             BIN_NAME="ooxml-validator.exe"
-            OUT_NAME="ooxml-validator-${{ matrix.rid }}.exe"
+            OUT_NAME="ooxml-validator-${{ matrix.dotnet_rid }}.exe"
           else
             BIN_NAME="ooxml-validator"
-            OUT_NAME="ooxml-validator-${{ matrix.rid }}"
+            OUT_NAME="ooxml-validator-${{ matrix.dotnet_rid }}"
           fi
-          mv out/${{ matrix.rid }}/${BIN_NAME} artifacts/${OUT_NAME}
+          mv "out/${{ matrix.dotnet_rid }}/${BIN_NAME}" "artifacts/${OUT_NAME}"
+          chmod +x "artifacts/${OUT_NAME}" || true
+
+      - name: Ad-hoc codesign (macOS only)
+        if: startsWith(matrix.dotnet_rid, 'osx-')
+        run: |
+          OUT_NAME="ooxml-validator-${{ matrix.dotnet_rid }}"
+          codesign --force --sign - --timestamp=none "artifacts/${OUT_NAME}"
+          codesign --verify --verbose "artifacts/${OUT_NAME}"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ooxml-validator-${{ matrix.rid }}
+          name: ooxml-validator-${{ matrix.dotnet_rid }}
           path: artifacts/*
 
   release:
@@ -102,11 +117,61 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Determine version
+        id: ver
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION=$(jq -r .version package.json)
+          if [ "${PKG_VERSION}" != "${{ steps.ver.outputs.version }}" ]; then
+            echo "Tag version ${{ steps.ver.outputs.version }} does not match package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: collected
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Build
+      - name: Build parent package
         run: npm run build
 
-      - name: Publish to npm
+      - name: Publish platform packages
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+
+          publish_platform() {
+            local dotnet_rid="$1"
+            local npm_rid="$2"
+            local ext=""
+            if [[ "$dotnet_rid" == win-* ]]; then ext=".exe"; fi
+            local bin_name="ooxml-validator${ext}"
+            local src="collected/ooxml-validator-${dotnet_rid}/ooxml-validator-${dotnet_rid}${ext}"
+            local pkg_dir="npm/${npm_rid}"
+
+            cp "$src" "${pkg_dir}/${bin_name}"
+            chmod +x "${pkg_dir}/${bin_name}" || true
+
+            (
+              cd "$pkg_dir"
+              npm version --no-git-tag-version --allow-same-version "$VERSION"
+              npm publish --provenance --access public
+            )
+          }
+
+          publish_platform osx-arm64    darwin-arm64
+          publish_platform osx-x64      darwin-x64
+          publish_platform linux-arm64  linux-arm64
+          publish_platform linux-x64    linux-x64
+          publish_platform win-arm64    win32-arm64
+          publish_platform win-x64      win32-x64
+
+      - name: Publish parent package
         run: npm publish --provenance --access public

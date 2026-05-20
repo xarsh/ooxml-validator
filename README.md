@@ -2,7 +2,7 @@
 
 Fast, zero-dependency validator for Office Open XML files (docx/xlsx/pptx).
 Runs as a standalone executable — no .NET installation required.
-A compact platform-specific binary is downloaded automatically during installation.
+A compact platform-specific binary is installed automatically via optional dependencies.
 
 Supports validation of:
 
@@ -103,7 +103,7 @@ ooxml-validator file.pptx \
 
 ## Environment Variables
 
-If the automatic binary download fails, you can manually specify the validator CLI path:
+If the optional dependency for your platform fails to install (e.g. `--no-optional`, unsupported platform), you can manually specify the validator CLI path:
 
 ```bash
 export OOXML_VALIDATOR_CLI="/path/to/ooxml-validator"
@@ -111,7 +111,7 @@ export OOXML_VALIDATOR_CLI="/path/to/ooxml-validator"
 
 ## Requirements
 
-The package automatically downloads platform-specific binaries during installation. Supported platforms:
+The package ships platform-specific binaries via `optionalDependencies`; your package manager installs only the one matching your `os`/`cpu`. Supported platforms:
 - macOS (arm64, x64)
 - Linux (arm64, x64)
 - Windows (arm64, x64)
