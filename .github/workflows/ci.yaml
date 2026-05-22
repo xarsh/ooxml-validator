@@ -22,11 +22,31 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+
       - name: Install dependencies
         run: npm ci
 
       - name: Lint (biome)
         run: npm run lint
 
-      - name: Build + test (tsc + node --test)
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Build local validator binary
+        run: |
+          dotnet publish ooxml-validator-dotnet/ooxml-validator.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o "${{ runner.temp }}/ooxml-validator-bin"
+
+      - name: Test (tsx --test)
+        env:
+          OOXML_VALIDATOR_CLI: ${{ runner.temp }}/ooxml-validator-bin/ooxml-validator
         run: npm test
