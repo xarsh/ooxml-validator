@@ -1,23 +1,23 @@
 {
-  "name": "@xarsh/ooxml-validator-win32-arm64",
-  "version": "0.0.0",
-  "description": "win32-arm64 binary for @xarsh/ooxml-validator",
-  "license": "MIT",
-  "author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/xarsh/ooxml-validator.git"
-  },
-  "os": [
-    "win32"
-  ],
-  "cpu": [
-    "arm64"
-  ],
-  "files": [
-    "ooxml-validator.exe"
-  ],
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@xarsh/ooxml-validator-win32-arm64",
+	"version": "0.2.0",
+	"description": "win32-arm64 binary for @xarsh/ooxml-validator",
+	"license": "MIT",
+	"author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/xarsh/ooxml-validator.git"
+	},
+	"os": [
+		"win32"
+	],
+	"cpu": [
+		"arm64"
+	],
+	"files": [
+		"ooxml-validator.exe"
+	],
+	"publishConfig": {
+		"access": "public"
+	}
 }

@@ -123,13 +123,33 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Verify tag matches package.json version
+      - name: Verify all 13 versions are in sync
         run: |
-          PKG_VERSION=$(jq -r .version package.json)
-          if [ "${PKG_VERSION}" != "${{ steps.ver.outputs.version }}" ]; then
-            echo "Tag version ${{ steps.ver.outputs.version }} does not match package.json version ${PKG_VERSION}"
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+
+          # 1. Root package.json .version must match the tag.
+          root=$(jq -r .version package.json)
+          if [ "$root" != "$V" ]; then
+            echo "Tag v$V does not match package.json version $root"
             exit 1
           fi
+
+          # 2 & 3. All 6 optionalDependencies pins and 6 sub-package versions must match.
+          for rid in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
+            pinned=$(jq -r ".optionalDependencies.\"@xarsh/ooxml-validator-$rid\"" package.json)
+            if [ "$pinned" != "$V" ]; then
+              echo "package.json pins @xarsh/ooxml-validator-$rid to $pinned, expected $V"
+              exit 1
+            fi
+            sub=$(jq -r .version "npm/$rid/package.json")
+            if [ "$sub" != "$V" ]; then
+              echo "npm/$rid/package.json version is $sub, expected $V"
+              exit 1
+            fi
+          done
+
+          echo "All 13 versions match $V"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8

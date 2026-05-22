@@ -1,48 +1,50 @@
 {
-  "name": "@xarsh/ooxml-validator",
-  "version": "0.2.0",
-  "description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
-  "keywords": [
-    "ooxml",
-    "openxml",
-    "pptx",
-    "docx",
-    "xlsx",
-    "validator"
-  ],
-  "license": "MIT",
-  "author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/xarsh/ooxml-validator.git"
-  },
-  "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "bin": {
-    "ooxml-validator": "dist/src/cli.js"
-  },
-  "scripts": {
-    "build": "tsc"
-  },
-  "optionalDependencies": {
-    "@xarsh/ooxml-validator-darwin-arm64": "0.2.0",
-    "@xarsh/ooxml-validator-darwin-x64": "0.2.0",
-    "@xarsh/ooxml-validator-linux-arm64": "0.2.0",
-    "@xarsh/ooxml-validator-linux-x64": "0.2.0",
-    "@xarsh/ooxml-validator-win32-arm64": "0.2.0",
-    "@xarsh/ooxml-validator-win32-x64": "0.2.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.8",
-    "@types/node": "^24.10.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "@xarsh/ooxml-validator",
+	"version": "0.2.0",
+	"description": "Node.js wrapper around OOXML-Validator (.NET/OpenXmlValidator)",
+	"keywords": [
+		"ooxml",
+		"openxml",
+		"pptx",
+		"docx",
+		"xlsx",
+		"validator"
+	],
+	"license": "MIT",
+	"author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/xarsh/ooxml-validator.git"
+	},
+	"type": "module",
+	"engines": {
+		"node": ">=18"
+	},
+	"main": "dist/src/index.js",
+	"types": "dist/src/index.d.ts",
+	"bin": {
+		"ooxml-validator": "dist/src/cli.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"lint": "biome check",
+		"test": "npm run build && node --test test/*.test.mjs"
+	},
+	"optionalDependencies": {
+		"@xarsh/ooxml-validator-darwin-arm64": "0.2.0",
+		"@xarsh/ooxml-validator-darwin-x64": "0.2.0",
+		"@xarsh/ooxml-validator-linux-arm64": "0.2.0",
+		"@xarsh/ooxml-validator-linux-x64": "0.2.0",
+		"@xarsh/ooxml-validator-win32-arm64": "0.2.0",
+		"@xarsh/ooxml-validator-win32-x64": "0.2.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.8",
+		"@types/node": "^24.10.1",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.9.3"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }
