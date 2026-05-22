@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { isValid, validateFile } from '../dist/src/index.js'
+import { isValid, validateFile } from '../src/index.js'
 
 const FIXTURES = fileURLToPath(new URL('./fixtures/', import.meta.url))
 const VALID_PPTX = join(FIXTURES, 'minimal.pptx')
