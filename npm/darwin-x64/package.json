@@ -1,6 +1,6 @@
 {
 	"name": "@xarsh/ooxml-validator-darwin-x64",
-	"version": "0.2.1",
+	"version": "0.3.0",
 	"description": "darwin-x64 binary for @xarsh/ooxml-validator",
 	"license": "MIT",
 	"author": "Takao Naito <xarsh@outlook.com> (https://xar.sh)",
