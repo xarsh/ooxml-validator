@@ -43,7 +43,7 @@ console.log(result.errors) // Array of validation errors
 npx @xarsh/ooxml-validator document.docx
 
 # Specify Office version
-npx @xarsh/ooxml-validator slides.pptx --office-version Office2019
+npx @xarsh/ooxml-validator slides.pptx --officeVersion Office2019
 ```
 
 The CLI always prints a single JSON object to stdout:
