@@ -3,18 +3,38 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 
-if (args.Length == 0)
+// Only the exact names below are accepted. Enum.TryParse would also accept different casing,
+// numeric values ("16"), and flag combinations ("Office2007,Office2010"), and would fall back to
+// Microsoft365 for anything else -- reporting a file as valid against a schema version the caller
+// never asked for.
+static FileFormatVersions? ParseOfficeVersion(string value) => value switch
 {
-  Console.Error.WriteLine("Usage: ooxml-validator <file> [OfficeVersion]");
-  return 1;
+  "Office2007" => FileFormatVersions.Office2007,
+  "Office2010" => FileFormatVersions.Office2010,
+  "Office2013" => FileFormatVersions.Office2013,
+  "Office2016" => FileFormatVersions.Office2016,
+  "Office2019" => FileFormatVersions.Office2019,
+  "Office2021" => FileFormatVersions.Office2021,
+  "Microsoft365" => FileFormatVersions.Microsoft365,
+  _ => null
+};
+
+const string Usage = "Usage: ooxml-validator <file> [Office2007|Office2010|Office2013|Office2016|Office2019|Office2021|Microsoft365]";
+
+if (args.Length is 0 or > 2)
+{
+  Console.Error.WriteLine(Usage);
+  return 2;
 }
 
 var file = args[0];
 var versionArg = args.Length > 1 ? args[1] : "Microsoft365";
 
-if (!Enum.TryParse<FileFormatVersions>(versionArg, out var ffVersion))
+if (ParseOfficeVersion(versionArg) is not { } ffVersion)
 {
-  ffVersion = FileFormatVersions.Microsoft365;
+  Console.Error.WriteLine($"Invalid Office version '{versionArg}'.");
+  Console.Error.WriteLine(Usage);
+  return 2;
 }
 
 var result = new ValidationResultDto

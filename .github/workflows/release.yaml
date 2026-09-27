@@ -72,6 +72,21 @@ jobs:
           codesign --force --sign - --timestamp=none "artifacts/${OUT_NAME}"
           codesign --verify --verbose "artifacts/${OUT_NAME}"
 
+      # Only the binaries the runner can execute; the cross-compiled ones are checked at install
+      # time by the smoke test in npm-publish.
+      - name: Smoke test the binary
+        if: matrix.dotnet_rid == 'linux-x64' || matrix.dotnet_rid == 'osx-arm64'
+        run: |
+          set -euo pipefail
+          BIN="artifacts/ooxml-validator-${{ matrix.dotnet_rid }}"
+          "$BIN" test/fixtures/minimal.pptx | grep -q '"ok": true'
+          "$BIN" test/fixtures/office2010-only.docx Office2010 | grep -q '"ok": true'
+          "$BIN" test/fixtures/office2010-only.docx Office2007 | grep -q '"ok": false'
+          if "$BIN" test/fixtures/minimal.pptx NotAVersion; then
+            echo "Expected a nonzero exit for an unknown Office version"
+            exit 1
+          fi
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
@@ -123,7 +138,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Verify all 13 versions are in sync
+      - name: Verify all 15 versions are in sync
         run: |
           set -euo pipefail
           V="${{ steps.ver.outputs.version }}"
@@ -135,7 +150,15 @@ jobs:
             exit 1
           fi
 
-          # 2 & 3. All 6 optionalDependencies pins and 6 sub-package versions must match.
+          # 2. Both version fields in the lockfile, so `npm ci` cannot drift from package.json.
+          for lockVersion in "$(jq -r .version package-lock.json)" "$(jq -r '.packages[""].version' package-lock.json)"; do
+            if [ "$lockVersion" != "$V" ]; then
+              echo "package-lock.json version is $lockVersion, expected $V"
+              exit 1
+            fi
+          done
+
+          # 3 & 4. All 6 optionalDependencies pins and 6 sub-package versions must match.
           for rid in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
             pinned=$(jq -r ".optionalDependencies.\"@xarsh/ooxml-validator-$rid\"" package.json)
             if [ "$pinned" != "$V" ]; then
@@ -149,7 +172,7 @@ jobs:
             fi
           done
 
-          echo "All 13 versions match $V"
+          echo "All 15 versions match $V"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8
@@ -162,36 +185,82 @@ jobs:
       - name: Build parent package
         run: npm run build
 
+      - name: Stage platform binaries
+        run: |
+          set -euo pipefail
+          stage() {
+            local dotnet_rid="$1" npm_rid="$2" ext=""
+            if [[ "$dotnet_rid" == win-* ]]; then ext=".exe"; fi
+            cp "collected/ooxml-validator-${dotnet_rid}/ooxml-validator-${dotnet_rid}${ext}" "npm/${npm_rid}/ooxml-validator${ext}"
+            chmod +x "npm/${npm_rid}/ooxml-validator${ext}"
+          }
+          stage osx-arm64   darwin-arm64
+          stage osx-x64     darwin-x64
+          stage linux-arm64 linux-arm64
+          stage linux-x64   linux-x64
+          stage win-arm64   win32-arm64
+          stage win-x64     win32-x64
+
+      # Install what is about to be published into a clean project and use it, so a broken
+      # tarball, bin entry, or binary resolution is caught before anything reaches the registry.
+      - name: Smoke test the packed artifacts
+        run: |
+          set -euo pipefail
+          PKGS="${RUNNER_TEMP}/pkgs"
+          mkdir -p "$PKGS"
+          npm pack --pack-destination "$PKGS"
+          (cd npm/linux-x64 && npm pack --pack-destination "$PKGS")
+
+          FIXTURES="${GITHUB_WORKSPACE}/test/fixtures"
+          mkdir -p "${RUNNER_TEMP}/smoke"
+          cd "${RUNNER_TEMP}/smoke"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund "$PKGS"/*.tgz
+
+          npx ooxml-validator "${FIXTURES}/minimal.pptx" | grep -q '"ok": true'
+          npx ooxml-validator "${FIXTURES}/office2010-only.docx" --officeVersion Office2010 > /dev/null
+          if npx ooxml-validator "${FIXTURES}/office2010-only.docx" --officeVersion Office2007 > /dev/null; then
+            echo "Expected exit 1 when validating against Office2007"
+            exit 1
+          fi
+          node --input-type=module -e "
+            import { validateFile, isValid } from '@xarsh/ooxml-validator'
+            import assert from 'node:assert/strict'
+            const r = await validateFile('${FIXTURES}/office2010-only.docx', { officeVersion: 'Office2007' })
+            assert.equal(r.ok, false)
+            assert.equal(r.errors[0].errorType, 'Schema')
+            assert.equal(await isValid('${FIXTURES}/minimal.pptx'), true)
+          "
+
+      # Skips anything already on the registry so a rerun after a partial failure can finish the
+      # release instead of dying on E403 and stranding the versions it did publish.
       - name: Publish platform packages
         run: |
           set -euo pipefail
           VERSION="${{ steps.ver.outputs.version }}"
+          for npm_rid in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
+            name="@xarsh/ooxml-validator-${npm_rid}"
+            if [ "$(npm view "${name}@${VERSION}" version 2>/dev/null || true)" = "$VERSION" ]; then
+              echo "${name}@${VERSION} is already published, skipping"
+              continue
+            fi
+            (cd "npm/${npm_rid}" && npm publish --provenance --access public)
+          done
 
-          publish_platform() {
-            local dotnet_rid="$1"
-            local npm_rid="$2"
-            local ext=""
-            if [[ "$dotnet_rid" == win-* ]]; then ext=".exe"; fi
-            local bin_name="ooxml-validator${ext}"
-            local src="collected/ooxml-validator-${dotnet_rid}/ooxml-validator-${dotnet_rid}${ext}"
-            local pkg_dir="npm/${npm_rid}"
-
-            cp "$src" "${pkg_dir}/${bin_name}"
-            chmod +x "${pkg_dir}/${bin_name}" || true
-
-            (
-              cd "$pkg_dir"
-              npm version --no-git-tag-version --allow-same-version "$VERSION"
-              npm publish --provenance --access public
-            )
-          }
-
-          publish_platform osx-arm64    darwin-arm64
-          publish_platform osx-x64      darwin-x64
-          publish_platform linux-arm64  linux-arm64
-          publish_platform linux-x64    linux-x64
-          publish_platform win-arm64    win32-arm64
-          publish_platform win-x64      win32-x64
+      # The root pins each platform package to an exact version. If one is missing, npm treats it
+      # as an optional dependency that simply did not install, and users on that platform get a
+      # runtime failure instead of an install error.
+      - name: Verify every platform package is live
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          for npm_rid in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
+            name="@xarsh/ooxml-validator-${npm_rid}"
+            if [ "$(npm view "${name}@${VERSION}" version 2>/dev/null || true)" != "$VERSION" ]; then
+              echo "${name}@${VERSION} is not on the registry; not publishing the root package"
+              exit 1
+            fi
+          done
 
       - name: Publish parent package
         run: npm publish --provenance --access public

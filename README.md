@@ -20,6 +20,8 @@ npm install @xarsh/ooxml-validator
 
 ### As a Library
 
+This package is ESM-only.
+
 ```javascript
 import { validateFile, isValid } from '@xarsh/ooxml-validator'
 
@@ -36,6 +38,10 @@ console.log(result.ok) // true or false
 console.log(result.errors) // Array of validation errors
 ```
 
+Both functions reject if the validator cannot be run at all (no binary for this platform, an
+unknown `officeVersion`, unparsable output). A file that exists but cannot be opened is *not* a
+rejection — see [Error types](#error-types).
+
 ### As a CLI
 
 ```bash
@@ -46,7 +52,8 @@ npx @xarsh/ooxml-validator document.docx
 npx @xarsh/ooxml-validator slides.pptx --officeVersion Office2019
 ```
 
-The CLI always prints a single JSON object to stdout:
+The CLI takes exactly one file. On a validation run it prints a single JSON object to stdout and
+nothing else; diagnostics go to stderr.
 
 ```json
 {
@@ -80,14 +87,33 @@ The CLI always prints a single JSON object to stdout:
 }
 ```
 
-This structured output is easy to consume from scripts and CI pipelines.
-For example, you can pipe it to jq to filter errors or fail the build when ok is false.
+### Exit codes
+
+| Code | Meaning |
+| ---- | ------- |
+| `0`  | The file is valid. |
+| `1`  | The file is invalid, or could not be opened. |
+| `2`  | Usage error, or the validator could not be run. |
+
+So in CI you can just let a non-zero exit fail the step — no need to parse the JSON:
 
 ```bash
-# Fail if any file is invalid
-ooxml-validator file.pptx \
-  | jq -e 'select(.ok == false)' > /dev/null && echo "invalid" && exit 1
+ooxml-validator file.pptx
 ```
+
+Pipe it to jq when you want to inspect the errors:
+
+```bash
+ooxml-validator file.pptx | jq '.errors[].description'
+```
+
+### Error types
+
+Every entry in `errors` has an `errorType`. `Schema`, `Semantic`, `Package`, and
+`MarkupCompatibility` come from the Open XML SDK and describe a problem *inside* the document.
+`Exception` means the file could not be validated at all — it is missing, corrupt, or has an
+extension this tool does not handle — and its `path`, `xPath`, and `id` are `null`. Both cases
+report `ok: false` and exit `1`, so check `errorType` if you need to tell them apart.
 
 ## Options
 
@@ -101,6 +127,9 @@ ooxml-validator file.pptx \
 - `Office2021`
 - `Microsoft365` (default)
 
+Names are matched exactly. Anything else is rejected rather than being quietly read as
+`Microsoft365`.
+
 ## Environment Variables
 
 If the optional dependency for your platform fails to install (e.g. `--no-optional`, unsupported platform), you can manually specify the validator CLI path:
@@ -108,6 +137,8 @@ If the optional dependency for your platform fails to install (e.g. `--no-option
 ```bash
 export OOXML_VALIDATOR_CLI="/path/to/ooxml-validator"
 ```
+
+The value is used verbatim as the executable path; it may contain spaces and takes no arguments.
 
 ## Requirements
 
