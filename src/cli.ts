@@ -71,10 +71,10 @@ async function main(): Promise<number> {
 	}
 }
 
-// A reader that goes away early (`... | head -1`) is not an error worth a stack trace.
+// A reader that goes away early (`... | head -1`) is not an error worth a stack trace. Swallow it
+// without touching the exit code: forcing one here would report an invalid document as a pass.
 process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-	if (err.code === 'EPIPE') process.exit(0)
-	throw err
+	if (err.code !== 'EPIPE') throw err
 })
 
 // Set exitCode rather than calling process.exit(): stdout is asynchronous when it is a pipe, and

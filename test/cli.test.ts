@@ -108,3 +108,26 @@ test('large output survives a pipe intact', async () => {
 	assert.equal(res.errors.length, 400)
 	assert.equal(code, 1)
 })
+
+// EPIPE must not rewrite the verdict: `ooxml-validator bad.docx | head -1` under `set -o pipefail`
+// still has to report the document as invalid.
+test('a reader that closes early keeps the exit code and stays quiet', async () => {
+	const tsx = fileURLToPath(new URL('../node_modules/.bin/tsx', import.meta.url))
+	const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
+
+	const { stderr, code } = await new Promise<{ stderr: string; code: number | null }>((resolve, reject) => {
+		// The fixture is well past the pipe buffer, so the write cannot finish before the close.
+		const child = spawn(tsx, [cli, MANY_ERRORS_DOCX, '--officeVersion', 'Office2007'], { stdio: ['ignore', 'pipe', 'pipe'] })
+		let err = ''
+		child.stderr.setEncoding('utf8')
+		child.stderr.on('data', (d) => {
+			err += d
+		})
+		child.stdout.once('data', () => child.stdout.destroy())
+		child.on('error', reject)
+		child.on('close', (c) => resolve({ stderr: err, code: c }))
+	})
+
+	assert.equal(code, 1)
+	assert.equal(stderr, '')
+})
