@@ -1,8 +1,8 @@
 # exclude everything by default
 *
 
-# allow runtime code
-!dist/**
+# allow runtime code (dist/scripts holds the release helper, which users do not need)
+!dist/src/**
 
 # package essentials
 !package.json
