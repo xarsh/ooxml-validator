@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { join } from 'node:path'
+import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import test from 'node:test'
 
 const execFileAsync = promisify(execFile)
 
