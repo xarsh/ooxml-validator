@@ -7,13 +7,14 @@ import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
 
-const CLI = fileURLToPath(new URL('../dist/src/cli.js', import.meta.url))
+const TSX = fileURLToPath(new URL('../node_modules/.bin/tsx', import.meta.url))
+const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 const FIXTURES = fileURLToPath(new URL('./fixtures/', import.meta.url))
 const VALID_PPTX = join(FIXTURES, 'minimal.pptx')
 
 async function runCli(args: string[]) {
 	try {
-		const { stdout, stderr } = await execFileAsync(process.execPath, [CLI, ...args])
+		const { stdout, stderr } = await execFileAsync(TSX, [CLI, ...args])
 		return { stdout, stderr, code: 0 }
 	} catch (err) {
 		const e = err as { stdout?: string; stderr?: string; code?: number }
