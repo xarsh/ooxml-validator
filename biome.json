@@ -1,13 +1,7 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
-	"vcs": {
-		"enabled": false,
-		"clientKind": "git",
-		"useIgnoreFile": false
-	},
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
 	"files": {
-		"ignoreUnknown": false,
-		"includes": ["**", "!dist", "!.claude", "!node_modules", "!ooxml-validator-dotnet"]
+		"includes": ["**", "!!dist", "!ooxml-validator-dotnet"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -17,7 +11,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"preset": "recommended"
 		}
 	},
 	"javascript": {

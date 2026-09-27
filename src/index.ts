@@ -1,7 +1,7 @@
 import { OFFICE_VERSIONS, type OfficeVersion, type RunOptions, runValidator, type ValidationError, type ValidationResult } from './runner.js'
 
+export type { OfficeVersion, RunOptions, ValidationError, ValidationResult }
 export { OFFICE_VERSIONS }
-export type { ValidationError, ValidationResult, OfficeVersion, RunOptions }
 
 export async function validateFile(filePath: string, options?: RunOptions): Promise<ValidationResult> {
 	return await runValidator(filePath, options)
