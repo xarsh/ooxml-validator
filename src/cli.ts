@@ -71,8 +71,7 @@ async function main(): Promise<number> {
 	}
 }
 
-// A reader that goes away early (`... | head -1`) is not an error worth a stack trace. Swallow it
-// without touching the exit code: forcing one here would report an invalid document as a pass.
+// Ignore EPIPE when a downstream reader closes early, while preserving the validator's own exit status.
 process.stdout.on('error', (err: NodeJS.ErrnoException) => {
 	if (err.code !== 'EPIPE') throw err
 })
