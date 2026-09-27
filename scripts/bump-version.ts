@@ -12,7 +12,7 @@ type PackageJson = {
 
 type PackageLock = {
 	version: string
-	packages: Record<string, { version?: string; optionalDependencies?: Record<string, string> }>
+	packages: Record<string, { version?: string; optionalDependencies?: Record<string, string>; optional?: boolean }>
 }
 
 const v = process.argv[2]
@@ -42,6 +42,13 @@ if (root) {
 	if (root.optionalDependencies) {
 		for (const k of Object.keys(root.optionalDependencies)) root.optionalDependencies[k] = v
 	}
+}
+// These are optional platform packages the just-bumped version hasn't been published as yet, so
+// a resolved entry (version/resolved/integrity from whatever was last installed locally) would
+// pin a stale tarball that doesn't match the new optionalDependencies range and fail `npm ci`.
+// Reset each to a bare stub; `npm install` fills it back in once the new version is published.
+for (const rid of rids) {
+	lock.packages[`node_modules/@xarsh/ooxml-validator-${rid}`] = { optional: true }
 }
 writeFileSync(lockPath, `${JSON.stringify(lock, null, '\t')}\n`)
 

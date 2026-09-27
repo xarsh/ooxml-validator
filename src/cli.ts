@@ -2,21 +2,40 @@
 import { parseArgs } from 'node:util'
 import { type RunOptions, validateFile } from './index.js'
 
-const { values, positionals } = parseArgs({
-	options: {
-		officeVersion: {
-			type: 'string',
-		},
-	},
-	allowPositionals: true,
-})
+const OFFICE_VERSIONS = ['Office2007', 'Office2010', 'Office2013', 'Office2016', 'Office2019', 'Office2021', 'Microsoft365'] as const
+
+const USAGE = 'Usage: ooxml-validator <file> [--officeVersion <version>]'
+
+function parseCliArgs() {
+	try {
+		return parseArgs({
+			options: {
+				officeVersion: {
+					type: 'string',
+				},
+			},
+			allowPositionals: true,
+		})
+	} catch (err) {
+		console.error(err instanceof Error ? err.message : String(err))
+		console.error(USAGE)
+		process.exit(2)
+	}
+}
+
+const { values, positionals } = parseCliArgs()
 
 if (positionals.length === 0) {
-	console.error('Usage: ooxml-validator <file> [--office-version <version>]')
+	console.error(USAGE)
 	process.exit(2)
 }
 
 const officeVersion = values.officeVersion ?? 'Microsoft365'
+if (!(OFFICE_VERSIONS as readonly string[]).includes(officeVersion)) {
+	console.error(`Invalid --officeVersion "${officeVersion}". Expected one of: ${OFFICE_VERSIONS.join(', ')}`)
+	process.exit(2)
+}
+
 const file = positionals[0]
 
 validateFile(file, { officeVersion: officeVersion as RunOptions['officeVersion'] })
